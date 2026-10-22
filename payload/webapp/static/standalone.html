@@ -1,0 +1,10 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>独立任务 · TikTok 工作台</title><link rel="stylesheet" href="/static/standalone.css"></head><body>
+<header><a href="/">← 返回工作台</a><span>本机独立运行</span></header>
+<main><h1>独立任务</h1><p class="muted">建表、回填、翻译与报告直接在软件中执行，无需安装 WorkBuddy。</p>
+<section class="panel"><h2>参与账号</h2><p class="muted">不勾选表示全部启用账号。任务使用已采集的本机数据；需要新数据时先运行增量采集。</p><div id="accounts"></div><p id="model-status" role="status">正在读取模型状态…</p><small>模型设置位于顶部菜单「工作台 → 设置」。AI 功能会将所选台账的文案与统计发送给你配置的模型服务，可能产生 API 费用。</small></section>
+<section class="panel"><h2>本地任务</h2><div class="actions"><button data-action="build">建立台账表</button><button data-action="backfill">回填与校验</button><button data-action="report">生成统计报告</button><button data-action="collect">增量采集与归档</button></div><p class="muted">建表只补齐缺失的规范表头；回填读取抓取和转写产物。统计报告汇总本机台账，不调用模型。</p></section>
+<section class="panel"><h2>模型任务</h2><div class="actions"><button data-action="model_test">测试模型连接</button><button data-action="translate">中文翻译并回填</button><button data-action="analyze">AI 内容分析</button></div><p class="muted">翻译只填补待译内容；AI 分析使用最多40条播放量靠前的样本，注明事实、推测与建议。</p><label><input id="include-ai" type="checkbox"> 完整整理时追加翻译与 AI 分析</label><div class="actions"><button class="primary" data-action="full">完整整理：建表 → 回填 → 报告</button></div></section>
+<section class="panel"><div class="heading"><h2>任务进度</h2><button id="stop" disabled>停止当前任务</button></div><p id="task-status" role="status">尚未开始任务</p><pre id="logs">执行后在这里显示日志。关闭本页面不会停止任务。</pre><h3>最近任务</h3><div id="history"></div></section>
+<section class="panel"><div class="heading"><h2>已生成报告</h2><button id="refresh">刷新</button></div><div id="reports">正在读取…</div></section></main><script src="/static/standalone.js"></script></body></html>

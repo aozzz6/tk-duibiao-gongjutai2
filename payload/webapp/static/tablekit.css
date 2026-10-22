@@ -1,0 +1,458 @@
+/* ══════════════════════════════════════════════════════════════════════
+   tablekit.css — 表格增强层样式（2026-10-20）
+   载入顺序在 style.css / style.v2.css 之后：只加新类，不覆盖既有规则。
+   回滚：删掉 index.html 里这一个 <link> + 对应 <script> 即可。
+   方向：工业实用（发丝线 / 等宽读数 / 单琥珀强调），与 v2 令牌同源。
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 表格骨架 ─────────────────────────────────────────────── */
+.tbl, .tk-t {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.tbl thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fbfbfc;
+  font-weight: 600;
+  font-size: 12px;
+  color: #4b5563;
+  letter-spacing: .01em;
+  border-bottom: 1px solid var(--line, #e5e7eb);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* 排序态：箭头用 CSS 生成，不污染表头文本（导出/复制不受影响） */
+.tbl thead th.tk-sortable { cursor: pointer; transition: color .15s, background .15s; }
+.tbl thead th.tk-sortable:hover { color: var(--pri, #b45309); background: #f6f2ea; }
+.tbl thead th.tk-sortable::after {
+  content: "↕";
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 11px;
+  opacity: 0;                 /* 默认不显示：避免每列都挂一个箭头，盖住真正的排序态 */
+  transition: opacity .12s;
+  transform: translateY(-1px);
+}
+.tbl thead th.tk-sortable:hover::after { opacity: .3; }
+.tbl thead th.tk-sortable.tk-asc::after { content: "▲"; opacity: 1; color: var(--pri, #b45309); }
+.tbl thead th.tk-sortable.tk-desc::after { content: "▼"; opacity: 1; color: var(--pri, #b45309); }
+
+/* 行级反馈：hover 提亮 + 左侧琥珀游标 */
+.tbl tbody tr { transition: background-color .12s ease; }
+.tbl tbody tr:hover > td { background: #fdfaf4; }
+.tbl tbody tr.tk-sel > td { background: #fbf3e6; }
+.tbl tbody tr.tk-sel > td:first-child { box-shadow: inset 3px 0 0 var(--pri, #b45309); }
+.tbl tbody tr.tk-open > td { background: #fbf7ef; }
+
+/* 数字列：等宽数字对齐（已有规则兜底，这里只补新表） */
+.tk-t td.num, .tk-t th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ── 列宽拖拽手柄 ─────────────────────────────────────────── */
+/* P0-1：只有真正固化过列宽的表才切 fixed；窄容器不固化 → 保持 auto 布局，让内容撑开表格 */
+.tbl.tk-fixed { table-layout: fixed; }
+/* P1-3：th 必须保留 sticky（表头吸顶）。sticky 本身就是绝对定位后代的包含块，
+   手柄 .tk-grip 不需要 position:relative —— 正是那条规则把 style.css 的 sticky 盖掉的。
+   吸顶需要不透明底色 + 层级，否则滚动时行内容会透过表头。
+   ★ 层级放在 thead 上，不放 th：th 一旦有 z-index 就成为独立层叠上下文，
+     会把 z-index:4 的手柄关在里面，后一列 th 反而盖住上一列的拖拽热区（实测拖不动）。 */
+.tbl.tk-resizable thead { position: relative; z-index: 3; }
+.tbl.tk-resizable thead th {
+  position: sticky; top: 0;
+  background: var(--card, #fff);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.tbl.tk-resizable th { overflow: hidden; text-overflow: ellipsis; }
+.tbl.tk-resizable td { overflow: hidden; text-overflow: ellipsis; }
+.tk-grip {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 9px;
+  cursor: col-resize;
+  z-index: 4;
+  background: transparent;
+}
+.tk-grip::before {
+  content: "";
+  position: absolute;
+  top: 22%; bottom: 22%; right: 4px;
+  width: 1px;
+  background: var(--line, #e5e7eb);
+  transition: background .15s, width .15s;
+}
+.tk-grip:hover::before, .tk-grip:active::before { background: var(--pri, #b45309); width: 2px; }
+body.tk-resizing { cursor: col-resize; }
+body.tk-resizing * { user-select: none !important; }
+
+/* ── 分页条 ───────────────────────────────────────────────── */
+.tk-pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 2px 2px;
+  font-size: 12px;
+  color: var(--sub, #5f6672);
+}
+.tk-pg-info b { color: var(--ink, #111827); font-variant-numeric: tabular-nums; }
+.tk-pg-btns { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; }
+.tk-pg-b {
+  min-width: 26px; height: 26px;
+  padding: 0 7px;
+  border: 1px solid var(--line, #e5e7eb);
+  background: #fff;
+  color: var(--ink, #111827);
+  border-radius: 6px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s, transform .12s;
+}
+.tk-pg-b:hover:not(:disabled) { border-color: var(--pri, #b45309); color: var(--pri, #b45309); }
+.tk-pg-b:active:not(:disabled) { transform: translateY(1px); }
+.tk-pg-b.on { background: var(--pri, #b45309); border-color: var(--pri, #b45309); color: #fff; font-weight: 600; }
+.tk-pg-b:disabled { opacity: .38; cursor: not-allowed; }
+.tk-pg-gap { padding: 0 2px; color: var(--sub, #5f6672); }
+.tk-pg-size { display: inline-flex; align-items: center; gap: 5px; }
+.tk-pg-size select {
+  height: 26px;
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  padding: 0 4px;
+}
+.tk-pg-b:focus-visible, .tk-pg-size select:focus-visible {
+  outline: 2px solid var(--pri, #b45309);
+  outline-offset: 2px;
+}
+
+/* ── 空态 ─────────────────────────────────────────────────── */
+.tk-empty-row > td { background: #fcfcfd; }
+.tk-empty { padding: 34px 16px; text-align: center; }
+.tk-empty-ic {
+  font-size: 26px;
+  line-height: 1;
+  color: #c7c9cf;
+  margin-bottom: 10px;
+  animation: tk-float 3.2s ease-in-out infinite;
+}
+.tk-empty-t { font-size: 14px; font-weight: 600; color: var(--ink, #111827); }
+.tk-empty-d { font-size: 12px; color: var(--sub, #5f6672); margin-top: 4px; max-width: 46ch; margin-left: auto; margin-right: auto; }
+.tk-empty-a { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+/* ── 骨架屏 ───────────────────────────────────────────────── */
+.tk-sk-row > td { padding: 9px 12px !important; }
+.tk-sk {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eeeef0 0%, #f7f7f8 40%, #eeeef0 80%);
+  background-size: 220% 100%;
+  animation: tk-shimmer 1.15s linear infinite;
+  animation-delay: calc(var(--i, 0) * 70ms);
+  width: calc(100% - var(--i, 0) * 3%);
+}
+@keyframes tk-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+/* ── 行展开 ───────────────────────────────────────────────── */
+.tbl tbody tr.tk-exp > td {
+  padding: 0 !important;
+  background: #fbfaf7;
+  border-bottom: 1px solid var(--line, #e5e7eb);
+  overflow: hidden;
+  transition: height .26s cubic-bezier(.16, 1, .3, 1);
+}
+.tk-detail { padding: 14px 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 22px; }
+.tk-detail .k { font-size: 11px; color: var(--sub, #5f6672); letter-spacing: .04em; text-transform: uppercase; }
+.tk-detail .v { font-size: 13px; color: var(--ink, #111827); line-height: 1.55; word-break: break-word; }
+.tk-detail .v a { color: var(--pri-d, #8a3f07); }
+.tk-detail .full { grid-column: 1 / -1; }
+.tk-exp-btn {
+  border: 1px solid var(--line, #e5e7eb);
+  background: #fff;
+  color: var(--sub, #5f6672);
+  width: 20px; height: 20px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .2s, color .15s, border-color .15s;
+}
+.tk-exp-btn:hover { color: var(--pri, #b45309); border-color: var(--pri, #b45309); }
+.tk-exp-btn[aria-expanded="true"] { transform: rotate(90deg); color: var(--pri, #b45309); border-color: var(--pri, #b45309); }
+
+/* ── 选中对比条 ───────────────────────────────────────────── */
+.tk-cmp-host { margin-top: 10px; }
+.tk-cmp {
+  border: 1px solid #eadfcc;
+  background: linear-gradient(180deg, #fffdf9, #fdf8ef);
+  border-radius: 8px;
+  padding: 10px 12px;
+  animation: tk-slide-up .26s cubic-bezier(.16, 1, .3, 1);
+}
+.tk-cmp-h { display: flex; align-items: center; gap: 10px; font-size: 12px; margin-bottom: 8px; }
+.tk-cmp-h .btn { margin-left: auto; }
+.tk-cmp-wrap { overflow: auto; }
+.tk-cmp-t { border-collapse: collapse; width: 100%; font-size: 12px; }
+.tk-cmp-t th, .tk-cmp-t td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #f0e6d6;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tk-cmp-t thead th { text-align: right; color: var(--sub, #5f6672); font-weight: 500; font-size: 11px; }
+.tk-cmp-t thead th:first-child, .tk-cmp-t tbody th { text-align: left; color: var(--ink, #111827); font-weight: 500; }
+.tk-cmp-t td.hi { color: #b3261e; font-weight: 700; background: #fdf2f1; }
+.tk-cmp-t td.lo { color: #1f7a4d; background: #f1faf5; }
+.tk-cmp-t .sp { color: var(--sub, #5f6672); }
+.tk-cmp-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; border-radius: 4px;
+  background: var(--pri, #b45309); color: #fff;
+  font-size: 11px; font-weight: 700; margin-right: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 迷你图表 ─────────────────────────────────────────────── */
+.tk-chart { width: 100%; height: auto; display: block; overflow: visible; }
+/* 环形图按方形比例撑满会过高：锁定最大边长，居中留白 */
+.tk-chart.tk-donut { max-width: 168px; margin: 2px auto 0; }
+.tk-bar {
+  fill: #d9c9ad;
+  cursor: pointer;
+  transform: scaleY(0);
+  animation: tk-bar-grow .38s cubic-bezier(.16, 1, .3, 1) forwards;
+  transition: fill .15s;
+}
+.tk-bar:hover { fill: #b45309; }
+.tk-bar.on { fill: #b45309; }
+.tk-bar.good { fill: #9fbfa9; }
+.tk-bar.bad { fill: #d9a7a3; }
+.tk-bar-lb { font-size: 11px; fill: #8b8f98; font-family: inherit; }
+@keyframes tk-bar-grow { to { transform: scaleY(1); } }
+
+.tk-dn-track { fill: none; stroke: #eceef1; stroke-width: 12; }
+.tk-dn-slice {
+  cursor: pointer;
+  opacity: 0;
+  animation: tk-fade-in .3s cubic-bezier(.16, 1, .3, 1) forwards;
+  transition: opacity .18s, transform .18s;
+  transform-origin: 50% 50%;
+}
+.tk-dn-slice:hover { opacity: .82; }
+.tk-dn-slice.on { transform: scale(1.03); }
+.tk-dn-slice.dim { opacity: .3; }
+.tk-dn-v { font-size: 14px; font-weight: 700; fill: #111827; font-variant-numeric: tabular-nums; }
+.tk-dn-c { font-size: 11px; fill: #8b8f98; letter-spacing: .06em; }
+.tk-dn-legend { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 8px; }.tk-lg-i {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid transparent; background: none;
+  padding: 2px 6px; border-radius: 4px;
+  font-size: 11px; color: var(--sub, #5f6672);
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.tk-lg-i i { width: 8px; height: 8px; border-radius: 4px; display: inline-block; }
+.tk-lg-i b { color: var(--ink, #111827); font-variant-numeric: tabular-nums; font-weight: 600; }
+.tk-lg-i:hover { background: #f4f4f6; color: var(--ink, #111827); }
+.tk-lg-i.on { background: #fdf3e5; color: var(--pri-d, #8a3f07); border-color: #ecd9c0; }
+
+.tk-ln-axis { stroke: #eceef1; stroke-width: 1; }
+.tk-ln-area { fill: rgba(180, 83, 9, .07); }
+.tk-ln-path { fill: none; stroke: #b45309; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.tk-ln-dot { fill: #fff; stroke: #b45309; stroke-width: 1.5; cursor: pointer; transition: r .12s; }
+.tk-ln-dot:hover, .tk-ln-dot.on { fill: #b45309; stroke: #fff; }
+.tk-ln-lb { font-size: 11px; fill: #8b8f98; }
+.tk-line { display: block; max-width: 100%; }
+
+.tk-tip {
+  position: fixed;
+  z-index: 9999;
+  padding: 6px 9px;
+  background: #141210;
+  color: #f5f1ea;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity .12s, transform .12s;
+  max-width: 240px;
+}
+.tk-tip.on { opacity: 1; transform: none; }
+.tk-tip b { display: block; font-weight: 600; }
+.tk-tip span { color: #c9c4bd; font-variant-numeric: tabular-nums; }
+
+/* ── 图表卡片（三图联动区） ───────────────────────────────── */
+.tk-viz {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.tk-viz-card {
+  border: 1px solid var(--line, #e5e7eb);
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px 12px 8px;
+  min-width: 0;
+  display: flex;              /* 让 .tk-viz-body 拉伸填满卡片，避免图下方留一大片空白 */
+  flex-direction: column;
+  transition: border-color .2s, box-shadow .2s;
+}
+.tk-viz-card:hover { border-color: #ddd6ca; box-shadow: 0 2px 10px rgba(28, 25, 23, .05); }
+
+/* 静默刷新时的交叉淡入（方案 A 增强）：只做透明度过渡，不产生位移/缩放。
+   由 app.js 在 bvQuiet 重绘后加 .bv-fading 触发，120ms 后自然结束。 */
+.tk-viz.bv-fading,
+#bv-viz.bv-fading { animation: tk-viz-fade .12s ease-out both; }
+@keyframes tk-viz-fade { from { opacity: .35; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .tk-viz.bv-fading, #bv-viz.bv-fading { animation: none; }
+}
+.tk-viz-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.tk-viz-h b { font-size: 12px; font-weight: 600; color: var(--ink, #111827); }
+.tk-viz-h .muted { font-size: 11px; margin-left: auto; }
+.tk-viz-x { display: flex; align-items: center; gap: 8px; }
+.tk-viz-body { flex: 1; min-width: 0; }
+.tk-filter-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; padding: 2px 4px 2px 8px;
+  border-radius: 16px; background: #fdf3e5; color: var(--pri-d, #8a3f07);
+  border: 1px solid #ecd9c0;
+}
+.tk-filter-tag button {
+  border: 0; background: none; cursor: pointer; color: inherit;
+  font-size: 13px; line-height: 1; padding: 0 3px; opacity: .7;
+}
+.tk-filter-tag button:hover { opacity: 1; }
+
+/* ── 入场动画 ─────────────────────────────────────────────── */
+.tbl tbody tr.tk-in {
+  animation: tk-row-in .34s cubic-bezier(.16, 1, .3, 1) both;
+  animation-delay: calc(var(--i, 0) * 18ms);
+}
+@keyframes tk-row-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes tk-fade-in { to { opacity: 1; } }
+@keyframes tk-slide-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes tk-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* 排序后重排过渡：FLIP 由 JS 打标，这里只给位移过渡 */
+.tbl tbody tr.tk-move { transition: transform .22s cubic-bezier(.16, 1, .3, 1); }
+
+/* ── 响应式 ───────────────────────────────────────────────── */
+@media (max-width: 1180px) {
+  .tbl thead th.col-opt, .tbl tbody td.col-opt { display: none; }
+}
+@media (max-width: 860px) {
+  .tk-pager { gap: 8px; }
+  .tk-pg-btns { margin-left: 0; order: 3; width: 100%; }
+  .tk-detail { grid-template-columns: 1fr; }
+  .tk-viz { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  /* 窄屏：关键表转 key-value 卡片（靠 data-label 提供列名） */
+  .tbl.tk-stack thead { display: none; }
+  .tbl.tk-stack tbody tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    border-bottom: 1px solid var(--line, #e5e7eb);
+    padding: 8px 10px;
+  }
+  .tbl.tk-stack tbody td {
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 8px;
+    padding: 3px 0;
+    text-align: left !important;
+    border: 0;
+  }
+  .tbl.tk-stack tbody td::before {
+    content: attr(data-label);
+    color: var(--sub, #5f6672);
+    font-size: 11px;
+  }
+}
+
+/* ── 行内迷你条（商品占比 / TOP 视频播放） ────────────────── */
+.tk-mini {
+  display: inline-block;
+  width: 54px;
+  height: 5px;
+  border-radius: 4px;
+  background: #eceef1;
+  overflow: hidden;
+  flex: none;
+  vertical-align: middle;
+}
+.tk-mini.wide { width: 116px; height: 4px; }
+.tk-mini i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #dcc29a, #b45309);
+  transform-origin: left center;
+  animation: tk-mini-grow .5s cubic-bezier(.16, 1, .3, 1) both;
+}
+@keyframes tk-mini-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* TOP 视频行：标题 + 迷你条 + 元信息 */
+.tk-topv { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tk-topv .nm { flex: 1 1 180px; min-width: 0; }
+.tk-topv .sub { flex: none; }
+
+/* 视频明细分页条：左对齐（.bv-foot 原本 text-align:center） */
+.bv-pager { text-align: left; }
+
+/* 台账表：数字列右对齐 + 行悬停已由 .tbl 规则覆盖，这里补固定列宽下的省略 */
+.tbl.tk-sheet td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl.tk-sheet thead th { position: sticky; top: 0; }
+
+/* 弹窗 / 全屏表格视图里的横向滚动容器：给粘性表头留 z-index 上下文 */
+.table-wrap { position: relative; }
+.sheet-host .table-wrap, .gm-tbl-wrap { max-height: 62vh; overflow: auto; }
+
+/* ── 降级：尊重系统减动效 ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .tbl tbody tr.tk-in,
+  .tk-bar, .tk-dn-slice, .tk-empty-ic, .tk-sk, .tk-cmp, .tk-mini i { animation: none !important; }
+  .tbl tbody tr, .tk-chart, .tk-pg-b { transition: none !important; }
+  .tbl tbody tr.tk-in { opacity: 1; transform: none; }
+  .tk-bar { transform: none; }
+}
+
+/* ── 分档清单（2026-10-20）：替代 4 根细柱，档位/数量/占比同排 ── */
+.tk-bands{display:flex;flex-direction:column;gap:2px}
+.tk-band{
+  display:grid;grid-template-columns:64px minmax(0,1fr) 62px 50px;
+  align-items:center;gap:10px;border:0;background:none;border-radius:6px;
+  padding:6px 8px;cursor:pointer;text-align:left;font:inherit;color:inherit;
+  transition:background .12s;
+}
+.tk-band:hover{background:#faf7f1}
+.tk-band:focus-visible{outline:2px solid var(--pri,#b45309);outline-offset:-2px}
+.tk-band.on{background:#fdf6ec;box-shadow:inset 2px 0 0 var(--pri,#b45309)}
+.tk-band.is-zero{color:#a8a29e}
+.tk-band-l{font-size:12px;color:var(--sub,#5f6672);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tk-band-track{height:8px;background:#f1efea;border-radius:4px;overflow:hidden}
+.tk-band-track i{display:block;height:100%;background:#d9c9ad;border-radius:4px;
+  transition:width .3s cubic-bezier(.16,1,.3,1)}
+.tk-band.on .tk-band-track i{background:var(--pri,#b45309)}
+.tk-band-n{font-size:13px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tk-band-n .u{font-size:11px;font-weight:400;color:var(--sub,#5f6672);margin-left:2px}
+.tk-band-p{font-size:11px;color:var(--sub,#5f6672);text-align:right;font-variant-numeric:tabular-nums}
+/* 分档卡片内容少，垂直居中，别让卡片下半截空着 */
+.tk-viz-card .tk-viz-body{align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+@media (max-width:520px){
+  .tk-band{grid-template-columns:56px minmax(0,1fr) 54px 42px;gap:8px;padding:6px}
+}
+
+/* ── 折线图：网格 / 纵轴刻度 / 峰值标注（2026-10-20） ── */
+.tk-ln-grid{stroke:#eceef1;stroke-width:1;stroke-dasharray:3 4}
+.tk-ln-ax{font-size:11px;fill:#a8a29e;font-variant-numeric:tabular-nums}
+.tk-ln-peak{font-size:11px;fill:var(--pri,#b45309);font-weight:600}
+.tk-ln-halo{fill:none;stroke:var(--pri,#b45309);stroke-width:1;opacity:.55}

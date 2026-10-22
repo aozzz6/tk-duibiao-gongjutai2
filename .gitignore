@@ -1,0 +1,17 @@
+node_modules/
+runtime/
+dist/
+交付/
+downloads/
+tests/artifacts/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+settings.json
+accounts.json
+*cookie*.txt
+*.db
+*.sqlite
+*.sqlite3

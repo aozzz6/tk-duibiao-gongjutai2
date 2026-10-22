@@ -1,0 +1,184 @@
+/* ══════════════════════════════════════════════════════════════════
+   style.v3.css — UI 整改层（2026-10-22）
+   载入顺序：style.css → style.v2.css → style.v3.css
+   只做覆盖，不改旧规则。回滚：删掉 index.html 里的这一个 <link> 即可。
+   逐条对应 `_ui_audit_20261022` 审查报告的问题编号。
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── P0-4 表格：吸顶表头 + 横向滚动兜底 ─────────────────────────────
+   长表（视频明细 2278px）滚到第 30 行仍能看见列名。 */
+.table-wrap{overflow:auto;overscroll-behavior:contain}
+.table-wrap .tbl thead th{
+  position:sticky;top:0;z-index:3;
+  background:var(--card);
+  box-shadow:inset 0 -1px 0 var(--line);
+}
+.bv-wrap{max-height:min(72vh,620px)}
+#pipe-table>.table-wrap{max-height:min(72vh,540px)}
+.tbl td,.tbl th,.kpi-v,.stg-n,.mini-bar+p{font-variant-numeric:tabular-nums}
+/* 账号对比表：固定布局，否则标签列按内容把整表撑出容器（1109 > 1083，右侧列被裁） */
+.bench-tbl{table-layout:fixed}
+/* 2026-10-22 R3（独立验收）：style.css 里的 min-width:1080px 让 1280 桌面（容器 908）
+   必然横向滚动。默认改为「铺满容器」：列宽是百分比，表宽 100%，无 min-width。
+   只有「用户拖过列宽」或「视口窄于 1280」时才允许横向滚动 —— 后者保留 900px 兜底，
+   避免把 8 列压成 40px（1280 是本轮验收的窄桌面边界，必须铺满）。 */
+.bench-tbl{min-width:0;width:100%}
+@media(max-width:1279px){
+  .bench-tbl{min-width:900px}
+}
+/* R3：列宽收紧后表头右内边距 18px 会把「均互动率」挤成「均互动率…」，
+   手柄只要 9px，收到 12px 即可（数值列在 1280 下多出 6px 文字空间）。 */
+.bench-tbl thead th{padding-right:12px}
+
+/* R3：账号对比表头部的「重置列宽」按钮与提示同一行，提示可换行、按钮不挤 */
+.ba-head{display:flex;align-items:center;gap:12px;margin:0 0 6px}
+.ba-head .ba-hint{margin:0;flex:1 1 auto;min-width:0}
+.ba-head .btn{flex:0 0 auto;white-space:nowrap}
+
+/* R2：账号图里「未知」值用弱化色 + 斜体，与数字 0 区分 */
+#bv-accchart text.ba-unknown{fill:var(--sub,#6b7280);font-style:italic}
+.bv-legend .muted{margin-left:12px}
+
+/* ── P1-15 KPI：与其它区块统一为独立卡（原来是连体条 + 竖线） ──────── */
+.kpi-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:12px;background:transparent;border:0;border-radius:0;overflow:visible;
+}
+.kpi{
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:14px 18px;
+}
+.kpi:first-child{border-left:1px solid var(--line)}
+.kpi-v .u{margin-left:4px}
+/* 数字统一深墨：4 个 KPI 全染琥珀等于没有重点，红色只留给真异常 */
+.kpi-v{color:var(--ink);font-weight:600}
+.kpi.warn .kpi-v{color:var(--ink)}
+.kpi.bad .kpi-v{color:var(--red)}
+
+/* ── P1-11 主按钮统一琥珀（原来「开始运行」是纯黑，与品牌色无关） ─── */
+.btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.primary:hover{background:var(--pri-d);border-color:var(--pri-d);color:#fff}
+.btn.primary.accent{background:var(--pri);border-color:var(--pri)}
+
+/* ── P1-12 焦点环统一琥珀（原来是浅蓝 + 蓝色光晕两套） ────────────── */
+input:focus,select:focus,textarea:focus{
+  outline:2px solid var(--pri);outline-offset:0;
+  border-color:var(--pri);box-shadow:none;
+}
+.ra-inp:focus{outline:2px solid var(--pri);box-shadow:none}
+
+/* ── P1-16 原生 checkbox 上色 ──────────────────────────────────── */
+input[type=checkbox]{accent-color:var(--pri);width:14px;height:14px;cursor:pointer}
+
+/* ── P1-14 badge：不再被压成「启…」，计数角标改强调色（红色留给错误） ── */
+.badge{white-space:nowrap}
+.nav-badge{background:var(--pri);color:#fff;font-variant-numeric:tabular-nums}
+#auto-grid table{table-layout:fixed}
+#auto-grid th:nth-child(1){width:auto}
+#auto-grid th:nth-child(2){width:116px}
+#auto-grid th:nth-child(3){width:82px}
+#auto-grid th:nth-child(4){width:118px}
+
+/* ── P0-6 工具栏：换行后摘要与操作成组，不再孤零零掉到第二行 ───────── */
+.acct-toolbar{row-gap:8px;align-items:center}
+#bv-summary{margin-left:auto;font-variant-numeric:tabular-nums}
+.acct-toolbar .btn.ghost.sm{white-space:nowrap}
+
+/* ── P0-8 / P2-21 进度条：4px→6px，缺口语义只留红/琥珀 ────────────── */
+.stg-track{height:6px}
+.mini-bar{width:56px;height:6px;border-radius:4px}
+
+/* ── P0-7 多账户批跑：容器加高、单元横排、hover 有底 ──────────────── */
+.multi-acc-list{
+  max-height:300px;
+  grid-template-columns:repeat(auto-fill,minmax(152px,1fr));
+  gap:0 8px;padding:6px 8px;
+}
+/* ★ 表单里的 label 是竖排（标签在上、控件在下，`.form-row label` 特异性 0-1-1），
+   这里必须用 0-2-0 的选择器压回横排，否则 checkbox 独占一行、45 个账号挤成重叠的三行 */
+.multi-acc-list label.ma-item{
+  display:flex;flex-direction:row;align-items:center;justify-content:flex-start;
+  height:30px;padding:0 6px;border-radius:6px;gap:6px;
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.multi-acc-list label.ma-item:hover{background:#f3f4f6}
+
+/* ── P0-1 待接管：诊断字段分组呈现，空队列时面板收紧 ───────────────── */
+.tk-panel.is-empty{padding-bottom:6px}
+.tk-panel.is-empty .tk-list{display:none}
+/* 标题与操作同一行，诊断信息换到第二行（原来标题/诊断/按钮挤成三行，按钮被甩到右下角） */
+.tk-panel .panel-head{flex-wrap:wrap;row-gap:8px}
+.tk-panel .panel-head>h2{order:1}
+.tk-panel .tk-actions{order:2;margin-left:auto}
+#tk-sub{
+  order:3;flex:1 1 100%;
+  display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;line-height:1.5;
+}
+#tk-sub .tk-kv{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}
+#tk-sub .tk-k{color:var(--sub);font-size:11px}
+#tk-sub .tk-v{color:var(--ink);font-variant-numeric:tabular-nums}
+#tk-sub .tk-doubt{
+  flex:1 1 100%;color:var(--amber);
+  padding-left:8px;border-left:2px solid var(--amber);line-height:1.5;
+}
+
+/* ── P2-22 页头：副标题不再被右侧操作挤到断行 ─────────────────────── */
+.page-head>div:first-child{flex:1 1 auto;min-width:0}
+.page-head .page-sub{max-width:none;text-wrap:pretty}
+
+/* ── P1-17 图表：两卡等高；趋势折线改深墨（原来引入第二个强调色 teal） ─ */.bv-charts{align-items:stretch}
+.bv-charts>.panel{display:flex;flex-direction:column}
+.bv-charts .chart-box{flex:1 1 auto;min-height:280px;display:flex;flex-direction:column;justify-content:center}
+.bv-legend .sw{width:9px;height:9px}
+
+/* ── P2-22 提示词反推卡片：操作分组 + 危险操作分离 ────────────────── */
+.rv-acts{gap:6px;align-items:center}
+.rv-acts .btn[data-act="del"]{margin-left:12px}
+.rv-kv{
+  gap:6px 0;margin-top:10px;
+  padding:8px 0 0;border-top:1px solid var(--hair);
+}
+.rv-kv span{
+  padding-right:14px;margin-right:14px;
+  border-right:1px solid var(--line);
+}
+.rv-kv span:last-child{border-right:0;margin-right:0;padding-right:0}
+
+/* ── P2-20 账号表：行操作分组，删除与常规操作拉开距离 ─────────────── */
+.acct-ops{display:flex;justify-content:flex-end;gap:2px;flex-wrap:wrap}
+.acct-ops .btn-link.danger{margin-left:6px;border-left:1px solid var(--line);border-radius:0}
+
+/* ── P2-23 运行记录：标题两行、时间戳不换行 ───────────────────────── */
+.run-row{align-items:center}
+.run-row .t{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.run-row .tm{white-space:nowrap;font-size:11px}
+
+/* ── P2-18 分组区：说明文字收短后不再与搜索框争行 ─────────────────── */
+#grp-tabs{gap:8px 10px;flex-wrap:wrap}
+
+/* ── P2-19 泳道卡：`[hidden]` 的确认条不再占位成右上角那个「空圆角方块」 ── */
+.lane-confirm[hidden]{display:none}
+.cat-ops{display:flex;align-items:center;gap:8px}
+.cat-ops .ico-add{width:24px;min-width:24px;padding:0;justify-content:center;font-size:13px;color:var(--sub)}
+.cat-ops .ico-add:hover{color:var(--ink)}
+.lane-ops .lane-run{white-space:nowrap}
+
+/* ── P0-3 / P2-21 「图文历史」与账号名之间补上分隔，不再黏成一个词 ──── */
+.pipe-tbl td.acc .fx,.stg-name .fx,.bench-tbl td.acc .fx,.acct-tbl td.acc .fx{
+  margin-left:6px;padding:0 5px;border-radius:4px;
+  background:var(--raised);color:var(--sub);font-size:11px;font-weight:400;
+}
+
+/* ── P0-6 视频明细：列宽重分配后，链接列不再被压成一个省略号 ───────── */
+#bench-videos .vidcol a{white-space:nowrap}
+
+/* ── P2-23 自动化流程：状态列固定后，操作列不再和「需转交 Agent」抢行 ─ */
+#auto-grid .act{flex-wrap:nowrap}
+#auto-grid .as{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── 窄屏兜底：sticky 表头在这些容器里放弃，避免双滚动条 ───────────── */
+@media(max-width:760px){
+  .bv-wrap,#pipe-panel>.table-wrap{max-height:none}
+  .table-wrap .tbl thead th{position:static;box-shadow:none}
+  .kpi-strip{grid-template-columns:repeat(2,1fr)}
+}

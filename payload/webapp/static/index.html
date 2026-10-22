@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TikTok 对标工作台</title>
+<link rel="stylesheet" href="/static/style.css?v=20261022B" />
+<link rel="stylesheet" href="/static/style.v2.css?v=20261022B" />
+<link rel="stylesheet" href="/static/tablekit.css?v=20261022B" />
+<link rel="stylesheet" href="/static/style.v3.css?v=20261022B" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="2"  y="16" width="4" height="8"  rx="1" fill="#b45309" opacity=".30"/>
+        <rect x="9"  y="11" width="4" height="13" rx="1" fill="#b45309" opacity=".55"/>
+        <rect x="16" y="6"  width="4" height="18" rx="1" fill="#b45309"/>
+        <circle cx="22.4" cy="6" r="1.5" fill="#111827"/>
+      </svg>
+      <div>
+        <div class="brand-title">对标工作台</div>
+        <div class="brand-sub">TikTok · 独立工作台</div>
+      </div>
+    </div>
+    <nav id="nav"><a class="nav-item nav-ext" href="/standalone">独立任务 · 翻译与报告</a>
+      <a class="nav-item active" data-view="overview" href="#overview" aria-current="page"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>总览看板</a>
+      <a class="nav-item" data-view="bench" href="#bench"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5V9M6.2 13.5V5.5M9.8 13.5V7.5M13.5 13.5V2.5"/></svg>对标分析</a>
+      <a class="nav-item" data-view="reverse" href="#reverse"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="4.5" height="10" rx="1"/><path d="M9 5.2h4.8M9 8h4.8M9 10.8h3"/></svg>提示词反推</a>
+      <a class="nav-item" data-view="accounts" href="#accounts"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.2" r="2.2"/><path d="M2.6 13c0-2.1 1.5-3.4 3.4-3.4S9.4 10.9 9.4 13"/><path d="M10.9 4.4a2 2 0 010 3.8M12.1 9.7c1.3.3 2.1 1.5 2.1 3.3"/></svg>账号管理</a>
+            <a class="nav-item" data-view="run" href="#run"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3.2v9.6l8-4.8z"/></svg>一键运行<span id="tk-nav-badge" class="nav-badge hidden" title="待接管账号数">0</span></a>
+      <!-- 以下菜单暂不使用：删掉 hide 类即可恢复（页面代码与接口都保留；style.css 里已不再强制隐藏视图） -->
+      <a class="nav-item" data-view="reports" href="#reports"><span aria-hidden="true">▤</span>报表与台账</a>
+      <a class="nav-item" data-view="schedule" href="#schedule"><span aria-hidden="true">◷</span>定时自动运行</a>
+      <a class="nav-item" data-view="hot" href="#hot"><span aria-hidden="true">◆</span>爆品监控</a>
+      
+    </nav>
+    <div class="side-foot">
+      <div id="health-dot" class="dot"></div>
+      <div id="health-text">连接中…</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ── 总览 ── -->
+    <section id="view-overview" class="view active">
+      <header class="page-head">
+        <div>
+          <h1>总览看板</h1>
+          <p class="page-sub" id="ov-finding">正在读取流水线状态…</p>
+        </div>
+        <div class="head-actions">
+          <span id="ov-updated" class="muted"></span>
+          <button class="btn" onclick="loadOverview(true)">刷新</button>
+        </div>
+      </header>
+      <div id="diag-bar" class="status-line"></div>
+
+      <section id="takeover-panel" class="panel tk-panel hidden" aria-live="polite">
+        <div class="panel-head">
+          <h2>待接管 <span id="tk-count" class="tk-count">0</span></h2>
+          <span class="muted" id="tk-sub">自动化跑完仍未成功的账号</span>
+          <div class="tk-actions">
+            <button class="btn ghost sm" onclick="loadPipelineStatus(true)">刷新</button>
+            <button class="btn sm" id="tk-retry-all" onclick="retryTakeover()">重跑全部</button>
+          </div>
+        </div>
+        <div id="tk-list" class="tk-list"></div>
+      </section>
+
+      <section class="kpi-strip" id="ov-kpi" aria-label="今日流水线"></section>
+
+      <section class="panel stage-panel">
+        <div class="stage-head">
+          <h2>流水线覆盖</h2>
+          <span class="muted">抓取 → 转写 → 入账 · 只列需要看的</span>
+        </div>
+        <div class="stg-legend">
+          <span>账号</span><span>抓取</span><span>转写</span><span>入账</span><span>商品</span><span class="stg-st">状态</span>
+        </div>
+        <div id="stage-strip"></div>
+        <div class="stage-foot">
+          <span id="stage-foot-note"></span>
+          <a href="#pipe-panel" id="stage-more">查看全部账号</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="foldable h-lg" data-fold-head="groups" role="button" tabindex="0" aria-expanded="true"
+              onclick="toggleFold('groups')"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFold('groups');}"
+              title="点击折叠 / 展开">
+            <span class="fold-caret">▾</span>账号分组 · 大分类
+            <span class="muted fold-hint"></span>
+          </h2>
+          <span class="muted">大分类 ← 分组 ← 账号 · 一个账号只归属一个分组</span>
+        </div>
+        <div data-fold-body="groups" id="grp-body">
+          <div class="grp-tabs" id="grp-tabs"></div>
+          <div id="grp-detail"></div>
+        </div>
+      </section>
+
+      <h2 class="sec-title foldable" id="pipe-fold" data-fold-head="pipeline" role="button" tabindex="0" aria-expanded="true"
+          onclick="toggleFold('pipeline')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFold('pipeline');}"
+          title="点击折叠 / 展开">
+        <span class="fold-caret" id="pipe-caret">▾</span>流水线状态
+        <span class="muted fold-hint" id="pipe-fold-hint"></span>
+      </h2>
+      <div class="panel" id="pipe-panel" data-fold-body="pipeline">
+        <div id="pipe-table"></div>
+      </div>
+      <div id="idle-wrap" class="hidden">
+        <h2 class="sec-title">未启用账号</h2>
+        <div id="idle-grid" class="muted"></div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>运行与自动化</h2>
+          <span class="muted">采集、台账、翻译与分析均由本软件执行</span>
+        </div>
+        <div class="ops-cols">
+          <div class="ops-col">
+            <h3 class="sub-head foldable" data-fold-head="recent" role="button" tabindex="0" aria-expanded="true"
+                onclick="toggleFold('recent')"
+                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFold('recent');}"
+                title="点击折叠 / 展开">
+              <span class="fold-caret">▾</span>最近运行
+              <span class="muted fold-hint"></span>
+            </h3>
+            <div id="recent-runs" class="runs" data-fold-body="recent"></div>
+          </div>
+          <div class="ops-col">
+            <h3 class="sub-head foldable" data-fold-head="auto" role="button" tabindex="0" aria-expanded="true"
+                onclick="toggleFold('auto')"
+                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFold('auto');}"
+                title="点击折叠 / 展开">
+              <span class="fold-caret">▾</span>自动化流程
+              <span class="muted fold-hint"></span>
+            </h3>
+            <div data-fold-body="auto" id="auto-body">
+              <div id="auto-grid" class="auto-tbl"></div>
+            </div>
+            <div id="auto-log-wrap" class="hidden" style="margin-top:12px">
+              <div class="panel-head">
+                <h2 id="auto-log-title">运行日志</h2>
+                <div>
+                  <span id="auto-log-status" class="badge gray">空闲</span>
+                  <button class="btn ghost sm" onclick="stopAuto()">终止</button>
+                  <button class="btn ghost sm" onclick="clearAutoLog()">清屏</button>
+                </div>
+              </div>
+              <pre id="auto-log" class="terminal">等待运行…</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ── 对标分析（第二版 · A 方案） ── -->
+    <section id="view-bench" class="view">
+      <header class="page-head">
+        <h1>对标分析</h1>
+        <div class="head-actions">
+          <select id="bench-account"></select>
+          <span id="bench-updated" class="muted"></span>
+          <button class="btn ghost" onclick="loadBench(true)">刷新</button>
+          <button class="btn ghost" onclick="copyBenchReport()">导出结论</button>
+        </div>
+      </header>
+      <p class="muted bench-sub">
+        数据源：本地 <code>scrape_*.json</code>（视频/互动）+ <code>*_products.json</code>（小黄车）+ 台账。
+        出单/GMV 数据尚未接入，相关区块如实标注「待接入」，不编造。
+      </p>
+      <div id="bench-kpis" class="kpi-grid"></div>
+
+      <div class="two-col bv-charts">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>每日发布与播放</h2>
+            <select id="bv-trend-range" aria-label="趋势时间范围" onchange="renderBenchTrend()">
+              <option value="7">近 7 天</option>
+              <option value="30" selected>近 30 天</option>
+              <option value="90">近 90 天</option>
+              <option value="0">全部</option>
+            </select>
+          </div>
+          <div id="bv-trend" class="chart-box"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>账号维度对比</h2>
+            <select id="bv-metric" aria-label="对比指标" onchange="renderBenchAccChart()">
+              <option value="total_plays">总播放</option>
+              <option value="avg_plays">平均播放</option>
+              <option value="videos">视频数</option>
+              <option value="avg_engagement">平均互动率</option>
+              <option value="product_coverage">挂车率</option>
+            </select>
+          </div>
+          <div id="bv-accchart" class="chart-box"></div>
+        </div>
+      </div>
+
+      <h2 class="sec-title">账号对比 <span class="muted" id="ba-sort-note"></span></h2>
+      <div class="panel">
+        <div class="ba-head">
+          <p class="muted ba-hint">单击行联动右侧条形图 · 双击行打开该账号台账 · 点表头排序 · 拖表头右缘调整列宽</p>
+          <button class="btn ghost sm" id="ba-reset-w" type="button" onclick="baResetColWidths()"
+                  title="清除手工列宽，回到按容器自适应">重置列宽</button>
+        </div>
+        <div class="table-wrap bench-table"><table class="tbl bench-tbl" id="bench-accounts"></table></div>
+      </div>
+
+      <h2 class="sec-title foldable" data-fold-head="bvid" role="button" tabindex="0" aria-expanded="true"
+          onclick="toggleFold('bvid')"
+          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFold('bvid');}"
+          title="点击折叠 / 展开">
+        <span class="fold-caret">▾</span>视频明细 <span class="muted" id="bv-count"></span>
+      </h2>
+      <section class="panel" data-fold-body="bvid">
+        <div class="acct-toolbar">
+          <input id="bv-q" type="search" placeholder="搜索标题 / 文案 / 标签" aria-label="搜索视频"
+                 oninput="bvChangeDebounced('q', this.value)" />
+          <select id="bv-days" aria-label="按发布时间筛选" onchange="bvChange('days', this.value)">
+            <option value="">全部时间</option>
+            <option value="1">近 1 天</option>
+            <option value="3">近 3 天</option>
+            <option value="7">近 7 天</option>
+            <option value="30">近 30 天</option>
+            <option value="90">近 90 天</option>
+          </select>
+          <select id="bv-plays" aria-label="按播放量筛选" onchange="bvChange('minPlays', this.value)">
+            <option value="0">全部播放量</option>
+            <option value="1000">≥ 1 千</option>
+            <option value="10000">≥ 1 万</option>
+            <option value="100000">≥ 10 万</option>
+            <option value="500000">≥ 50 万</option>
+          </select>
+          <select id="bv-prod" aria-label="按挂车筛选" onchange="bvChange('prod', this.value)">
+            <option value="">全部（挂车/未挂车）</option>
+            <option value="yes">仅带小黄车</option>
+            <option value="no">仅未挂车</option>
+          </select>
+          <select id="bv-src" aria-label="按数据来源筛选" onchange="bvChange('src', this.value)">
+            <option value="">全部来源</option>
+            <option value="scrape">仅抓取快照</option>
+            <option value="ledger">仅台账补录</option>
+          </select>
+          <select id="bv-sort" aria-label="排序方式" onchange="bvChange('sort', this.value)">
+            <option value="plays_desc">播放量 高→低</option>
+            <option value="plays_asc">播放量 低→高</option>
+            <option value="likes_desc">点赞 高→低</option>
+            <option value="engagement_desc">互动率 高→低</option>
+            <option value="time_desc">发布时间 新→旧</option>
+            <option value="time_asc">发布时间 旧→新</option>
+          </select>
+          <span class="grow"></span>
+          <span class="muted" id="bv-summary">—</span>
+          <button class="btn ghost sm" onclick="bvReset()">重置</button>
+          <button class="btn ghost sm" onclick="bvExportCsv()">导出 CSV</button>
+        </div>
+        <div class="tk-viz" id="bv-viz" aria-label="视频分布联动图"></div>
+        <div class="table-wrap bv-wrap"><table class="tbl" id="bench-videos"></table></div>
+        <div class="tk-cmp-host" id="bv-cmp" aria-live="polite"></div>
+        <div class="bv-foot">
+          <div id="bv-pager" class="bv-pager"></div>
+          <button class="btn ghost sm hidden" id="bv-more" onclick="bvMore()">加载更多</button>
+        </div>
+      </section>
+
+      <div class="two-col">
+        <div class="panel">
+          <h2>爆款规律</h2>
+          <div id="bench-play-buckets"></div>
+          <h2 class="sec-title">高频话题标签</h2>
+          <div id="bench-tags" class="tag-cloud"></div>
+          <h2 class="sec-title">文案钩子（开场高频词）</h2>
+          <div id="bench-hooks" class="tag-cloud"></div>
+        </div>
+        <div class="panel">
+          <h2>被挂车最多的商品</h2>
+          <p class="muted prod-hint">点击商品行展开详情；行尾 <b>FastMoss ↗</b> 跳商品页；详情内点视频标题开原视频、点<b>「视频出单量」</b>直达该视频的 FastMoss 页（视频带货商品列表 · 总销量/总销售额）。</p>
+          <div id="bench-products" class="list"></div>
+          <h2 class="sec-title">播放 TOP 视频</h2>
+          <div id="bench-top-videos" class="list"></div>
+        </div>
+      </div>
+
+      <h2 class="sec-title">可借鉴点（自动推导）</h2>
+      <div id="bench-takeaways" class="panel"></div>
+    </section>
+
+    <!-- ── 提示词反推（2026-10-21）── -->
+    <section id="view-reverse" class="view">
+      <header class="page-head">
+        <div>
+          <h1>提示词反推</h1>
+          <p class="page-sub">TikTok 链接 → 分镜级 Seedance 2.0 Mini 提示词包 · 按《视频提示词反推 SOP》v1.0</p>
+        </div>
+        <div class="head-actions">
+          <span id="rv-updated" class="muted"></span>
+          <button class="btn" onclick="RV_load()">刷新</button>
+        </div>
+      </header>
+
+      <section class="panel rv-create">
+        <div class="form-row">
+          <label class="grow">TikTok 视频链接
+            <input id="rv-url" type="text" autocomplete="off"
+                   placeholder="https://www.tiktok.com/@xxx/video/123456… 或 vm.tiktok.com 短链，也接受纯 video id" />
+          </label>
+          <label>视觉模型 <select id="rv-model"></select></label><label class="btn ghost">导入本地视频<input id="rv-local-file" type="file" accept="video/mp4,video/webm,video/quicktime,.mkv" hidden /></label>
+          <button class="btn primary" id="rv-create" onclick="reverseCreate()">① 生成素材</button>
+        </div>
+        <p class="muted rv-hint">第一步只下原片、抽帧、场景检测、导首帧（不花 token）；
+          素材就绪后点「② AI 反推」才调视觉模型读帧写提示词。需要调整提示词时点「本地精修」，直接在软件里填写要求并执行。</p>
+      </section>
+
+      <div id="rv-list"></div>
+    </section>
+
+    <!-- ── 账号管理 ── -->
+    <section id="view-accounts" class="view">
+      <header class="page-head">
+        <div>
+          <h1>账号管理</h1>
+          <p class="page-sub" id="acct-sub">账号即 accounts.json 的一条记录；写操作仅限本机（127.0.0.1）</p>
+        </div>
+        <div class="head-actions">
+          <span id="acct-updated" class="muted"></span>
+          <button class="btn" onclick="loadAccounts(true)">刷新</button>
+          <button class="btn" onclick="openAccountImport()">⤓ 批量导入</button>
+          <button class="btn primary accent" onclick="openAccountForm('create')">＋ 新增账号</button>
+        </div>
+      </header>
+
+      <section class="kpi-strip" id="acct-kpis" aria-label="账号概览"></section>
+
+      <section class="panel">
+        <div class="acct-toolbar">
+          <input id="acct-q" type="search" placeholder="搜索账号 / 昵称 / 标签" aria-label="搜索账号" />
+          <select id="acct-status" aria-label="按状态筛选">
+            <option value="">全部状态</option>
+            <option value="active">启用中</option>
+            <option value="inactive">已停用</option>
+          </select>
+          <select id="acct-type" aria-label="按类型筛选">
+            <option value="">全部类型</option>
+            <option value="video">视频账号</option>
+            <option value="image">图文账号</option>
+          </select>
+          <select id="acct-group" aria-label="按分组筛选">
+            <option value="">全部分组</option>
+          </select>
+          <span class="grow"></span>
+          <span class="muted" id="acct-hint">—</span>
+        </div>
+        <div class="table-wrap acct-wrap" id="acct-list"></div>
+      </section>
+    </section>
+
+    <!-- ── 表格视图（台账 sheet 全屏查看；#sheet?file=&sheet= 可直接深链） ── -->
+    <section id="view-sheet" class="view">
+      <header class="page-head">
+        <div>
+          <button class="btn ghost sm sheet-back" onclick="sheetViewBack()">← 返回</button>
+          <h1 id="sheet-title">台账</h1>
+          <p class="page-sub" id="sheet-sub"></p>
+        </div>
+        <div class="head-actions">
+          <span id="sheet-meta" class="muted"></span>
+          <button class="btn" onclick="sheetViewExcel()">用 Excel 打开</button>
+          <button class="btn" onclick="sheetViewReload()">刷新</button>
+        </div>
+      </header>
+      <section class="panel">
+        <div id="sheet-host" class="sheet-host" aria-live="polite"></div>
+      </section>
+    </section>
+
+<!-- ── 一键运行 ── -->
+    <section id="view-run" class="view">
+      <header class="page-head">
+        <h1>一键运行</h1>
+        <div class="head-actions">
+          <span id="trans-pending-badge" class="muted"></span>
+          <button class="btn ghost" onclick="backfillTranslation()"
+                  title="立即触发一次翻译队列巡检（定时巡检仍在跑，这里只是手动提前）">翻译回填</button>
+        </div>
+      </header>
+      <div class="panel">
+        <div class="form-row">
+          <label>账号
+            <select id="run-account"></select>
+          </label>
+          <label>开始日期 <input id="run-from" type="date" /></label>
+          <label>结束日期 <input id="run-to" type="date" /></label>
+          <label>转写语言
+            <select id="run-lang">
+              <option value="" selected>自动（账号语言）</option>
+              <option value="en">en（英文账号）</option>
+              <option value="de">de（德语账号）</option>
+              <option value="zh">zh（中文口播）</option>
+              <option value="fr">fr（法语账号）</option>
+              <option value="es">es（西语账号）</option>
+              <option value="it">it（意大利语账号）</option>
+              <option value="jp">jp（日语账号）</option>
+              <option value="kr">kr（韩语账号）</option>
+            </select>
+          </label>
+          <label>转写后端
+            <select id="run-backend" title="auto：有显卡走 GPU（2026-10-14 起约 7x 加速）；无显卡自动回落 CPU">
+              <option value="auto" selected>auto（有显卡走 GPU，推荐）</option>
+              <option value="openai">openai（CPU 兜底，慢）</option>
+              <option value="faster" disabled>faster（本机 CPU 会崩，已禁用）</option>
+            </select>
+            <span class="muted hint-inline">auto：有显卡走 GPU，约 7x 加速</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <div class="field grow">
+            <span class="field-label">多账户批跑</span>
+            <span class="muted hint-inline">勾选多个账号，按序串行执行（共用一条日志/进度）</span>
+            <div id="run-multi" class="multi-acc">
+              <div class="multi-acc-tools">
+                <button type="button" class="btn ghost sm" onclick="setAllAccounts(true)">全选</button>
+                <button type="button" class="btn ghost sm" onclick="setAllAccounts(false)">清空</button>
+                <button type="button" class="btn ghost sm" onclick="setAccountsByGroup()">按当前组填充</button>
+                <span id="run-multi-count" class="multi-acc-cnt">已选 0</span>
+              </div>
+              <div id="run-multi-list" class="multi-acc-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label class="grow">执行步骤
+            <div id="run-steps" class="chips"></div>
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="chk"><input id="run-no-resume" type="checkbox" /> 忽略断点（--no-resume）</label>
+          <label class="chk"><input id="run-tolerant" type="checkbox" checked /> 容忍下架条（--allow-scrape-errors）</label>
+          <label class="chk"><input id="run-daily" type="checkbox" /> 改为跑每日增量（daily_update.py）<span class="muted">· 勾选后步骤/语言/后端/日期均不生效</span></label>
+        </div>
+        <div class="form-row">
+          <button class="btn primary" onclick="submitRun()">开始运行</button>
+          <button class="btn ghost" onclick="presetAll()">全选本地步骤</button>
+          <button class="btn ghost" onclick="presetCore()">核心链 s1→s2→s5</button>
+        </div>
+        <div class="form-row run-add-row">
+          <button class="btn ghost sm" id="run-add-toggle" onclick="toggleRunAdd()">＋ 新增对标账号</button>
+          <span class="muted">注册后即可在本页选用；数据需再跑采集步骤生成</span>
+        </div>
+        <div id="run-add-form" class="run-add hidden">
+          <div class="form-row">
+            <label>账号名（TikTok @name，必填）<input id="run-add-name" class="ra-inp" placeholder="例: gutpickde" oninput="runAddValidate()" /></label>
+            <label>平台<input class="ra-inp" value="TikTok" disabled /></label>
+            <label>面向地区
+              <select id="run-add-region" class="ra-inp" onchange="syncAddLang()">
+                <option value="">未标注（默认 en）</option>
+                <option value="us">美国</option>
+                <option value="uk">英国</option>
+                <option value="eu">欧洲</option>
+                <option value="de">德国</option>
+                <option value="fr">法国</option>
+                <option value="es">西语区</option>
+                <option value="it">意区</option>
+                <option value="cn">中国大陆</option>
+                <option value="cn-hk">中国香港</option>
+                <option value="cn-tw">中国台湾</option>
+                <option value="jp">日本</option>
+                <option value="kr">韩国</option>
+              </select>
+            </label>
+            <label>转写语言
+              <select id="run-add-lang" class="ra-inp">
+                <option value="en">en（英文账号）</option>
+                <option value="de">de（德语账号）</option>
+                <option value="zh">zh（中文口播）</option>
+                <option value="fr">fr（法语账号）</option>
+                <option value="es">es（西语账号）</option>
+                <option value="it">it（意大利语账号）</option>
+                <option value="jp">jp（日语账号）</option>
+                <option value="kr">kr（韩语账号）</option>
+                <option value="">自动（按地区推断）</option>
+              </select>
+            </label>
+            <label>昵称（可选）<input id="run-add-nickname" class="ra-inp" /></label>
+            <label>标签（可选，逗号分隔）<input id="run-add-tags" class="ra-inp" placeholder="例: 德国AI对标" /></label>
+          </div>
+          <div class="form-row">
+            <span id="run-add-hint" class="muted"></span>
+            <button class="btn primary sm" onclick="submitRunAdd()">保存并选用</button>
+            <button class="btn ghost sm" onclick="toggleRunAdd(false)">收起</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="run-progress-panel" hidden>
+        <div class="panel-head">
+          <h2>运行进度</h2>
+          <span id="run-progress-note" class="muted"></span>
+        </div>
+        <div id="run-progress" class="rp"></div>
+        <div id="fail-analysis" class="fa hidden"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>实时日志</h2>
+          <div>
+            <span id="log-status" class="badge gray">空闲</span>
+            <button class="btn ghost sm" onclick="stopCurrent()">终止</button>
+            <button class="btn ghost sm" onclick="clearLog()">清屏</button>
+          </div>
+        </div>
+        <pre id="log" class="terminal">等待运行…</pre>
+      </div>
+    </section>
+
+    <!-- ── 报表与台账 ── -->
+    <section id="view-reports" class="view">
+      <header class="page-head">
+        <h1>报表与台账</h1>
+        <button class="btn ghost" onclick="loadReports()">刷新</button>
+      </header>
+      <div class="two-col">
+        <div class="panel">
+          <h2>每日完整性报告</h2>
+          <div id="report-days" class="list"></div>
+          <h2 class="sec-title">对标销售分析报表</h2>
+          <div id="benchmark-list" class="list"></div>
+        </div>
+        <div class="panel">
+          <h2>台账预览</h2>
+          <div id="ledger-info" class="list"></div>
+          <div id="ledger-view"></div>
+        </div>
+      </div>
+      <div id="report-frame-wrap" class="panel hidden">
+        <div class="panel-head">
+          <h2 id="frame-title">预览</h2>
+          <div>
+            <a id="frame-open" class="btn ghost sm" target="_blank">新窗口打开</a>
+            <button class="btn ghost sm" onclick="closeFrame()">关闭</button>
+          </div>
+        </div>
+        <iframe id="report-frame" class="frame" sandbox="allow-scripts allow-same-origin"></iframe>
+      </div>
+    </section>
+
+    <!-- ── 定时 ── -->
+    <section id="view-schedule" class="view">
+      <header class="page-head"><h1>定时自动运行</h1></header>
+      <div class="panel narrow">
+        <p class="muted">定时任务由本软件执行，仅在软件运行且电脑未休眠时生效；时间使用当前电脑时区。错过时刻后当日启动会补执行一次。含 AI 的任务会调用你配置的模型服务。</p>
+        <div class="form-row">
+          <label class="chk"><input id="sc-enabled" type="checkbox" /> 启用每日定时</label>
+          <label>执行时间 <input id="sc-time" type="time" value="09:30" /></label>
+        </div>
+        <div class="form-row">
+          <label class="grow">参与账号</label>
+        </div>
+        <div id="sc-accounts" class="chips"></div><div class="form-row"><label>执行任务 <select id="sc-task"><option value="collect">增量采集与归档</option><option value="build">建立台账表</option><option value="backfill">回填与校验</option><option value="translate">中文翻译并回填（API）</option><option value="report">统计报告</option><option value="analyze">AI 内容分析（API）</option><option value="full">完整整理（不调用模型）</option><option value="collect_ai">采集、翻译与分析（API）</option></select></label></div>
+        <div class="form-row">
+          <button class="btn primary" onclick="saveSchedule()">保存</button>
+          <button class="btn ghost" onclick="triggerDaily()">立即执行一次</button>
+          <span id="sc-last" class="muted"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 爆品监控 ── -->
+    <section id="view-hot" class="view">
+      <header class="page-head">
+        <h1>爆品监控</h1>
+        <button class="btn ghost" onclick="loadHot()">刷新</button>
+      </header>
+      <div class="panel">
+        <div class="form-row">
+          <button class="btn primary" onclick="hotAction('probe')">Probe 通道探测</button>
+          <button class="btn" onclick="hotAction('snapshot')">Snapshot 今日快照</button>
+          <button class="btn" onclick="hotAction('diff')">Diff 波动差分</button>
+          <span id="hot-cookie" class="muted"></span>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="panel"><h2>差分候选爆品</h2><div id="hot-candidates" class="list"></div></div>
+        <div class="panel"><h2>历史快照</h2><div id="hot-snaps" class="list"></div></div>
+      </div>
+    </section>
+
+    
+    
+  </main>
+</div>
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-body">
+    <div class="panel-head">
+      <h2 id="modal-title">台账</h2>
+      <div>
+        <span id="modal-sub" class="muted"></span>
+        <button id="modal-sheet" class="btn ghost sm">进入表格</button>
+        <button id="modal-excel" class="btn ghost sm">用 Excel 打开</button>
+        <button class="btn ghost sm" onclick="closeModal()">关闭</button>
+      </div>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/static/tablekit.js?v=20261022B"></script>
+<script src="/static/app.js?v=20261022B"></script>
+<script src="/static/reverse.js?v=20261022B"></script>
+</body>
+</html>

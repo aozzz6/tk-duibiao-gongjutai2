@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>工作台设置</title><style>
+*{box-sizing:border-box}body{font:14px/1.65 'Microsoft YaHei',sans-serif;background:#f4f6fa;color:#25324a;margin:0;padding:28px 34px}h1{font-size:23px;margin:0 0 6px}p{color:#65738a;margin:0 0 20px}label{display:block;margin-top:14px;font-weight:600}input[type=text],input[type=password]{display:block;width:100%;padding:10px 12px;border:1px solid #cbd5e3;border-radius:7px;font:inherit;background:white}small{display:block;color:#6a7890;font-weight:400;margin:3px 0 7px}button{padding:10px 18px;border:0;border-radius:7px;cursor:pointer;font:inherit;background:#e2e8f0;color:#25324a}.primary{background:#2860dc;color:#fff}footer{display:flex;gap:12px;margin-top:24px}#status{color:#b42318;min-height:24px;white-space:pre-wrap}#root{overflow-wrap:anywhere}input:focus{outline:2px solid #7da9ff}</style></head>
+<body><style>body{padding-bottom:130px}footer{position:fixed;bottom:0;left:0;right:0;background:#f4f6fa;margin:0;padding:14px 34px;border-top:1px solid #dce3ee}#status{position:fixed;bottom:66px;left:34px;right:34px;margin:0;background:#f4f6fa;min-height:0}</style><h1>这台电脑的工作台</h1><p>新电脑从空白开始。以下设置和后续记录仅保存在当前电脑、当前 Windows 用户下。</p>
+<label>代理地址<small>下载、抓取使用的 HTTP 代理。不使用代理可留空。</small><input id="proxy" type="text" placeholder="http://127.0.0.1:7897"></label>
+<label>CPU 转写模型文件（可选）<small>已随包携带 medium.pt。需要使用其他 Whisper .pt 模型时填写完整文件路径。</small><input id="whisperModel" type="text" placeholder="留空使用随包模型"></label>
+<label>GPU 转写模型目录（可选）<small>填写 CTranslate2 模型目录后启用自动 GPU 选择。留空使用随包 CPU 转写，不需要另外下载模型。</small><input id="fasterModelDir" type="text" placeholder="例如 E:\模型\medium-ct2"></label>
+<h2>独立模型服务</h2><p>翻译和内容分析使用此处配置，无需 WorkBuddy。采用 chat-completions 文本协议；模型连接直连，不使用上面的采集代理。</p>
+<label>模型 API 基础地址<small>填写服务商提供的基础地址（通常以 /v1 结尾），也支持本机兼容服务。</small><input id="aiBaseUrl" type="text" placeholder="https://你的模型服务地址/v1"></label>
+<label>API Key<small>密钥仅保存到本机设置；本机 localhost 服务允许留空。</small><input id="aiApiKey" type="password" autocomplete="off" placeholder="填写你自己的 API Key"></label>
+<label>模型名称<small>填写服务提供的准确模型 ID。</small><input id="aiModel" type="text" placeholder="模型 ID"></label>
+<h2>提示词反推的视觉模型</h2><p>需要支持图片输入的 chat-completions 服务。可与文本模型使用同一服务，但请分别填写。</p>
+<label>视觉 API 基础地址<input id="visionBaseUrl" type="text" placeholder="https://你的视觉模型服务/v1"></label>
+<label>视觉 API Key<input id="visionApiKey" type="password" autocomplete="off"></label>
+<label>视觉模型名称<input id="visionModel" type="text" placeholder="支持图片的模型 ID"></label>
+<h2>本地榜单监控（可选）</h2><p>EchoTik 已下线。这里配置保留的榜单快照与差分模块，凭据和数据只保存在本机。</p>
+<label>榜单登录 Cookie<input id="monitorCookie" type="password" autocomplete="off"></label>
+<label>监控源 JSON<small>使用 sources 数组；源类型 cc_api（path）或 cc_ssr（url），每个源需 name、type、params。留空数组表示不启用任何来源。</small><textarea id="monitorSources" rows="8" style="width:100%;font:13px/1.6 Consolas,monospace"></textarea></label>
+<label><input id="autoTranslate" type="checkbox"> 采集并同步台账后自动翻译（会向模型服务发送待译文案并可能产生 API 费用）</label>
+<small id="root"></small><footer><button class="primary" id="save">保存并重启</button><button id="folder">打开本机数据目录</button></footer><p id="status" role="status"></p>
+<script src="settings.js"></script></body></html>
