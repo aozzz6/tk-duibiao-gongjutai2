@@ -1,13 +1,14 @@
 {
   "name": "tiktok-workbench-desktop",
   "version": "2.0.0",
-  "description": "TikTok 工作台 Windows 便携版",
+  "description": "TikTok 工作台 Windows 桌面版（安装包与便携版）",
   "author": "Workbench",
   "private": true,
   "main": "desktop/main.js",
   "scripts": {
     "start": "electron .",
-    "pack": "electron-builder --win --x64 --dir"
+    "pack": "electron-builder --win --x64",
+    "pack:dir": "electron-builder --win --x64 --dir"
   },
   "devDependencies": {
     "electron": "44.9.1",
@@ -41,7 +42,18 @@
     "electronVersion": "44.9.1",
     "win": {
       "signAndEditExecutable": false,
-      "target": "dir"
+      "target": [
+        "nsis",
+        "dir"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TikTok工作台"
     }
   }
 }

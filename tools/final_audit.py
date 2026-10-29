@@ -2,12 +2,13 @@
 import ast
 import hashlib
 import json
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FINAL = ROOT / '交付' / 'TikTok工作台_本地最终版'
 PAYLOAD = FINAL / 'resources' / 'payload'
-ORIGINAL = Path(r'D:\workbuddy_project\tiktok')
+ORIGINAL = Path(os.environ.get('WB_ORIGINAL_PROJECT', ROOT))
 
 
 def digest(file):

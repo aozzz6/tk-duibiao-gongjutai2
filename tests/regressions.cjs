@@ -3,7 +3,9 @@ const {prepareProfile}=require('../desktop/profile');
 const project=path.resolve(__dirname,'..'),root=path.join(__dirname,'artifacts','regressions-'+Date.now());
 fs.mkdirSync(root,{recursive:true});fs.cpSync(path.join(project,'payload'),path.join(root,'project'),{recursive:true});
 const web=path.join(root,'project','webapp'),tests=path.join(web,'tests');fs.mkdirSync(tests);
-for(const file of fs.readdirSync('D:/workbuddy_project/tiktok/webapp/tests')) if(/\.test\.(py|js)$/.test(file)||file==='_job_drill_harness.py')fs.copyFileSync(path.join('D:/workbuddy_project/tiktok/webapp/tests',file),path.join(tests,file));
+const sourceTests=process.env.WB_SOURCE_TESTS;
+if(!sourceTests) throw new Error('Set WB_SOURCE_TESTS to the source project webapp/tests directory before running regressions.cjs.');
+for(const file of fs.readdirSync(sourceTests)) if(/\.test\.(py|js)$/.test(file)||file==='_job_drill_harness.py')fs.copyFileSync(path.join(sourceTests,file),path.join(tests,file));
 const profile=prepareProfile(project,path.join(root,'profile'),path.join(root,'no-workbuddy'),'regression-session',56789);
 // Several inherited suites assumed the developer's preexisting account data.
 // Supply deterministic synthetic accounts instead of reading any production data.

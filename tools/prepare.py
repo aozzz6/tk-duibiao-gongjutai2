@@ -7,6 +7,7 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -15,9 +16,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-ORIGINAL = Path(r"D:\workbuddy_project\tiktok")
+ORIGINAL = Path(os.environ.get("WB_ORIGINAL_PROJECT", ROOT))
 PAYLOAD = ROOT / "payload"
-RUNTIME = Path(r"D:\workbuddy_project\tiktok_desktop\runtime")
+RUNTIME = Path(os.environ.get("WB_SOURCE_RUNTIME", ROOT / "runtime"))
 SCRIPT_NAMES = """add_account_sheet auto_translate batch_transcribe_fw build_ledger_15col
 daily_batch desc_split enumerate_image enum_accounts extract_products fastmoss_gmv
 fill_style_labels generate_benchmark_report hot_product_monitor post_update post_update_flow
@@ -44,7 +45,7 @@ class PortablePaths(ast.NodeTransformer):
             ("D:/workbuddy_project/tiktok/pipeline", "WB_PIPELINE_DIR"),
             ("D:/workbuddy_project/tiktok/reverse", "WB_REVERSE_DIR"),
             ("D:/1/对标账号", "WB_LEDGER_DIR"),
-            ("C:/Users/Administrator/.workbuddy", "WB_HOME"),
+            ("/.workbuddy", "WB_HOME"),
             ("D:/hf_cache", "HF_HOME"),
         ]:
             if value == prefix:
